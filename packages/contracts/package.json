@@ -1,0 +1,13 @@
+{
+  "name": "@nftm/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vv",
+    "coverage": "forge coverage",
+    "fmt": "forge fmt",
+    "deploy:base": "bash script/deploy-base.sh",
+    "deploy:sepolia": "forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast --verify"
+  }
+}

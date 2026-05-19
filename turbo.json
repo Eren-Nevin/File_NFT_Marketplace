@@ -1,0 +1,49 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [".env", "tsconfig.base.json"],
+  "globalEnv": [
+    "NODE_ENV",
+    "DATABASE_URL",
+    "REDIS_URL",
+    "API_INTERNAL_URL",
+    "API_PUBLIC_ORIGIN",
+    "DAPP_PUBLIC_ORIGIN",
+    "ADMIN_PUBLIC_ORIGIN",
+    "BASE_RPC_URL",
+    "BASE_SEPOLIA_RPC_URL",
+    "ANVIL_RPC_URL",
+    "CHAIN_ID",
+    "USDC_ADDRESS",
+    "MARKETPLACE_ADDRESS",
+    "FACTORY_ADDRESS",
+    "INITIAL_SUPER_ADMIN_ADDRESS",
+    "VOUCHER_SIGNER_PRIVATE_KEY",
+    "SUPER_ADMIN_PRIVATE_KEY",
+    "JWT_SECRET",
+    "SESSION_COOKIE_DOMAIN",
+    "PINATA_JWT",
+    "PINATA_GATEWAY_URL",
+    "TRUST_PROXY"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".svelte-kit/**", "build/**", "out/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    }
+  }
+}

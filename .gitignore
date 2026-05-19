@@ -1,0 +1,45 @@
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# deps
+node_modules/
+
+# builds
+dist/
+build/
+out/
+.svelte-kit/
+.turbo/
+coverage/
+.tsbuildinfo
+*.tsbuildinfo
+
+# Foundry — lib/ is committed as plain files (no submodules) for a self-
+# contained checkout; build artifacts and broadcast/cache stay ignored.
+packages/contracts/out/
+packages/contracts/cache/
+packages/contracts/broadcast/
+packages/contracts/coverage*
+packages/contracts/dist/
+
+# Docker / data
+infra/data/
+infra/.volumes/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Generated
+packages/sdk/src/generated/
