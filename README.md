@@ -16,9 +16,8 @@ packages/
   shared/      Zod schemas, EIP-712 typed-data, chain constants
   sdk/         Typed API client (generated)
   ui/          Shared Svelte components + Tailwind preset
-infra/
-  docker-compose.yml
-  .env.example
+docker-compose.yml
+.env.example
 ```
 
 ## Quick start

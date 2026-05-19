@@ -21,9 +21,9 @@
     "db:seed": "pnpm -F @nftm/db seed",
     "contracts:test": "pnpm -F @nftm/contracts test",
     "contracts:build": "pnpm -F @nftm/contracts build",
-    "compose:up": "docker compose -f infra/docker-compose.yml --env-file .env up -d",
-    "compose:down": "docker compose -f infra/docker-compose.yml --env-file .env down",
-    "compose:logs": "docker compose -f infra/docker-compose.yml --env-file .env logs -f"
+    "compose:up": "docker compose up -d",
+    "compose:down": "docker compose down",
+    "compose:logs": "docker compose logs -f"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

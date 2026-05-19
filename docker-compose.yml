@@ -1,8 +1,6 @@
 name: nftm
 
-# Single root .env (../.env relative to this file) is loaded automatically
-# because docker compose looks for .env next to the compose file by default
-# — we'll pass --env-file ../.env explicitly via the npm script.
+# Root .env is auto-loaded by docker compose (it sits next to this file).
 
 networks:
   default:
@@ -48,7 +46,7 @@ services:
   # ──────────────────────────────────────────────────────────────────────────
   migrator:
     build:
-      context: ..
+      context: .
       dockerfile: packages/db/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -63,7 +61,7 @@ services:
   # ──────────────────────────────────────────────────────────────────────────
   api:
     build:
-      context: ..
+      context: .
       dockerfile: apps/api/Dockerfile
     environment:
       NODE_ENV: ${NODE_ENV}
@@ -97,7 +95,7 @@ services:
   # ──────────────────────────────────────────────────────────────────────────
   indexer:
     build:
-      context: ..
+      context: .
       dockerfile: apps/indexer/Dockerfile
     environment:
       NODE_ENV: ${NODE_ENV}
@@ -124,7 +122,7 @@ services:
   # ──────────────────────────────────────────────────────────────────────────
   dapp:
     build:
-      context: ..
+      context: .
       dockerfile: apps/dapp/Dockerfile
     environment:
       NODE_ENV: ${NODE_ENV}
@@ -146,7 +144,7 @@ services:
 
   admin:
     build:
-      context: ..
+      context: .
       dockerfile: apps/admin/Dockerfile
     environment:
       NODE_ENV: ${NODE_ENV}
