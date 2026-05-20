@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import {
   auditLogs,
   collections,
@@ -11,10 +11,36 @@ import { ApiError, ERROR_CODES } from '@nftm/shared/errors';
 import { getDeps } from '../../deps.js';
 import { requireRole, sessionAddress } from '../../auth/middleware.js';
 import { signLazyVoucher, structHash, voucherSignerAddress } from '../../services/voucher.js';
+import { serializeVoucher } from '../../lib/voucherSerialize.js';
 import type { LazyVoucher } from '@nftm/shared/eip712';
 
 const r = new Hono();
 r.use('*', requireRole('ADMIN', 'SUPER_ADMIN'));
+
+/// List vouchers — newest first, joined with NFT + collection for display.
+r.get('/', async (c) => {
+  const deps = getDeps();
+  const rows = await deps.db
+    .select({
+      voucher: lazyVouchers,
+      nftName: nfts.name,
+      collectionName: collections.name,
+      collectionSymbol: collections.symbol,
+    })
+    .from(lazyVouchers)
+    .innerJoin(nfts, eq(nfts.id, lazyVouchers.nftId))
+    .innerJoin(collections, eq(collections.id, nfts.collectionId))
+    .orderBy(desc(lazyVouchers.createdAt))
+    .limit(200);
+  return c.json({
+    items: rows.map((r) => ({
+      ...serializeVoucher(r.voucher),
+      nftName: r.nftName,
+      collectionName: r.collectionName,
+      collectionSymbol: r.collectionSymbol,
+    })),
+  });
+});
 
 /// Build and sign an EIP-712 voucher off-chain. The signature is what the
 /// buyer submits to the Marketplace contract via `buyVoucher`.

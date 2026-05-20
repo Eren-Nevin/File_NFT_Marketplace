@@ -15,6 +15,44 @@
   let buying = $state(false);
   let txHash = $state<Hex | null>(null);
   let error = $state<string | null>(null);
+  let watchMsg = $state<string | null>(null);
+  let copied = $state(false);
+
+  function shortAddr(a: string): string {
+    return `${a.slice(0, 6)}…${a.slice(-4)}`;
+  }
+
+  async function copyAddress() {
+    try {
+      await navigator.clipboard.writeText(collection.contractAddress);
+      copied = true;
+      setTimeout(() => (copied = false), 1500);
+    } catch {
+      // no-op
+    }
+  }
+
+  async function addToWallet() {
+    if (!nft.tokenId) {
+      watchMsg = 'Token id not assigned yet — try again after the first sale.';
+      return;
+    }
+    watchMsg = null;
+    try {
+      if (!wallet.isConnected) {
+        await wallet.connect(Number(env.PUBLIC_CHAIN_ID) as 8453 | 84532 | 31337);
+      }
+      const ok = await wallet.watchAsset({
+        address: collection.contractAddress as `0x${string}`,
+        tokenId: String(nft.tokenId),
+        symbol: collection.symbol,
+        image: media.previewCid ? `${gateway}/ipfs/${media.previewCid}` : undefined,
+      });
+      watchMsg = ok ? 'Added to your wallet.' : 'Wallet declined the request.';
+    } catch (e) {
+      watchMsg = (e as Error).message;
+    }
+  }
 
   const totalUsdc = $derived(voucher ? BigInt(voucher.pricePerUnit) * BigInt(qty) : 0n);
 
@@ -46,7 +84,10 @@
         await wallet.publicClient.waitForTransactionReceipt({ hash });
       }
 
-      // 2) buyVoucher
+      // 2) buyVoucher. `expiresAt` is an ISO string on the wire; the contract
+      // (and the admin's signed payload) uses unix seconds — convert back the
+      // same way the admin did, otherwise the EIP-712 signature won't verify.
+      const expiresAtSec = BigInt(Math.floor(new Date(voucher.expiresAt).getTime() / 1000));
       const hash = await wallet.walletClient.writeContract({
         address: marketplace,
         abi: MARKETPLACE_ABI,
@@ -58,7 +99,7 @@
             maxAmount: BigInt(voucher.maxAmount),
             pricePerUnit: BigInt(voucher.pricePerUnit),
             tokenURI: voucher.tokenURI,
-            expiresAt: BigInt(voucher.expiresAt),
+            expiresAt: expiresAtSec,
             nonce: BigInt(voucher.nonce),
           },
           voucher.signature,
@@ -139,13 +180,77 @@
       <div class="card p-5 text-sm text-neutral-500">No active listing for this NFT.</div>
     {/if}
 
+    <div class="card p-5 space-y-3">
+      <div class="flex items-baseline justify-between">
+        <h3 class="text-sm font-medium">Token info</h3>
+        <span class="text-[10px] text-neutral-500 uppercase tracking-wide">ERC-1155</span>
+      </div>
+      <dl class="text-xs space-y-2">
+        <div class="flex items-center justify-between gap-3">
+          <dt class="text-neutral-500 shrink-0">Contract</dt>
+          <dd class="font-mono truncate">
+            <button
+              class="hover:underline"
+              onclick={copyAddress}
+              title={collection.contractAddress}
+            >{shortAddr(collection.contractAddress)}</button>
+            {#if copied}<span class="ml-1 text-green-600">copied</span>{/if}
+          </dd>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <dt class="text-neutral-500 shrink-0">Token ID</dt>
+          <dd class="font-mono">{nft.tokenId ?? '—'}</dd>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <dt class="text-neutral-500 shrink-0">Network</dt>
+          <dd>Chain {collection.chainId}</dd>
+        </div>
+      </dl>
+      <button
+        class="btn btn-ghost w-full justify-center text-sm"
+        onclick={addToWallet}
+        disabled={!nft.tokenId}
+      >Add to wallet</button>
+      {#if watchMsg}
+        <div class="text-xs text-neutral-600 text-center break-all">{watchMsg}</div>
+      {/if}
+    </div>
+
+    {#if nft.attributes && nft.attributes.length > 0}
+      <div class="card p-5">
+        <h3 class="text-sm font-medium mb-3">Properties</h3>
+        <div class="flex flex-wrap gap-2">
+          {#each nft.attributes as attr}
+            <div class="px-3 py-1.5 rounded border border-neutral-200 bg-neutral-50 min-w-[100px]">
+              <div class="text-[10px] uppercase tracking-wide text-neutral-500">{attr.trait_type}</div>
+              <div class="text-sm font-medium text-neutral-900">{attr.value}</div>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
+
     <details class="text-sm">
-      <summary class="cursor-pointer text-neutral-600">Metadata</summary>
-      <pre class="mt-2 overflow-auto text-xs bg-neutral-50 p-3 rounded">{JSON.stringify(
-        nft.attributes,
-        null,
-        2,
-      )}</pre>
+      <summary class="cursor-pointer text-neutral-600">On-chain metadata</summary>
+      <div class="mt-2 space-y-2">
+        <div class="text-xs text-neutral-500">
+          The contract's <code>uri({nft.tokenId ?? '?'})</code> returns this immutable IPFS pointer:
+        </div>
+        <a
+          href={`${gateway}/ipfs/${nft.metadataCid}`}
+          target="_blank"
+          rel="noopener"
+          class="font-mono text-xs break-all text-[var(--color-accent)] hover:underline block"
+        >ipfs://{nft.metadataCid}</a>
+        <details class="text-xs">
+          <summary class="cursor-pointer text-neutral-500">Raw attributes JSON</summary>
+          <pre class="mt-2 overflow-auto bg-neutral-50 p-3 rounded">{JSON.stringify(
+            nft.attributes,
+            null,
+            2,
+          )}</pre>
+        </details>
+      </div>
     </details>
   </aside>
 </div>

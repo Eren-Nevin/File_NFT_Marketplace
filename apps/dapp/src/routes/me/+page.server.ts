@@ -3,5 +3,6 @@ import { redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.session) throw redirect(303, '/');
-  return { session: locals.session };
+  const { items } = await locals.api.me.owned();
+  return { session: locals.session, owned: items };
 };

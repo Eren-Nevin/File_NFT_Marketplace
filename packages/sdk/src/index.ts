@@ -99,6 +99,20 @@ export function createClient(opts: ClientOptions) {
         ),
       countView: (id: string) => request<{ counted: boolean }>('POST', `/nfts/${id}/view`),
     },
+    me: {
+      owned: () =>
+        request<{
+          items: Array<{
+            nft: Nft;
+            collection: Collection;
+            media: MediaAsset;
+            bought: string;
+            sold: string;
+            balance: string;
+            lastPurchase: string;
+          }>;
+        }>('GET', '/me/owned'),
+    },
     admin: {
       admins: {
         list: () =>
@@ -134,6 +148,18 @@ export function createClient(opts: ClientOptions) {
         list: () => request<{ items: Nft[] }>('GET', '/admin/nfts'),
       },
       vouchers: {
+        list: () =>
+          request<{
+            items: Array<
+              Voucher & {
+                voucherHash: `0x${string}`;
+                createdAt: string;
+                nftName: string;
+                collectionName: string;
+                collectionSymbol: string;
+              }
+            >;
+          }>('GET', '/admin/vouchers'),
         create: (body: CreateVoucherRequest) =>
           request<{
             id: string;

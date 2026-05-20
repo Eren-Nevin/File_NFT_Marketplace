@@ -89,6 +89,10 @@ contract NFTCollection is
             _tokenURIs[tokenId] = tokenURI_;
             maxSupply[tokenId] = maxSupply_;
             emit TokenInitialized(tokenId, maxSupply_, tokenURI_);
+            // ERC-1155 standard event — indexers (BaseScan, OpenSea, wallets)
+            // listen for this to know when to fetch/cache token metadata.
+            // Without it the token shows up with no image on explorers.
+            emit URI(tokenURI_, tokenId);
         } else {
             if (maxSupply[tokenId] != maxSupply_) revert MaxSupplyMismatch();
         }

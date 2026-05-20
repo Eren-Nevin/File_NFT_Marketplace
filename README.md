@@ -36,7 +36,7 @@ DApp: <http://localhost:9301> · Admin: <http://localhost:9302>
 In production the VPS nginx terminates TLS and proxies:
 
 - `nft-marketplace.projects.erennevin.xyz` → `127.0.0.1:9301`
-- `admin.nft-marketplace.projects.erennevin.xyz` → `127.0.0.1:9302`
+- `nft-marketplace-admin.projects.erennevin.xyz` → `127.0.0.1:9302`
 
 ## Stack
 

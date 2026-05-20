@@ -6,6 +6,7 @@ import { getDeps } from '../deps.js';
 import { sessionLoader } from '../auth/middleware.js';
 import { take } from '../lib/rateLimit.js';
 import { hashIp } from '../lib/ipHash.js';
+import { serializeVoucher } from '../lib/voucherSerialize.js';
 
 const catalog = new Hono();
 catalog.use('*', sessionLoader);
@@ -66,7 +67,7 @@ catalog.get('/nfts/:id', async (c) => {
     .orderBy(desc(lazyVouchers.createdAt))
     .limit(1);
 
-  return c.json({ ...row[0], voucher: voucherRow[0] ?? null });
+  return c.json({ ...row[0], voucher: voucherRow[0] ? serializeVoucher(voucherRow[0]) : null });
 });
 
 catalog.post('/nfts/:id/view', async (c) => {

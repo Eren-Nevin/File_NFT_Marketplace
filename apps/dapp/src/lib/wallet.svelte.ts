@@ -94,6 +94,32 @@ class Wallet {
     }
     return this.walletClient.signMessage({ account: this.state.address, message });
   }
+
+  /// Prompt the wallet to track an ERC-1155 token (contract + tokenId).
+  /// Returns true if the user accepted, false otherwise.
+  /// MetaMask and most modern wallets support ERC1155 here; older versions may
+  /// fall back to ERC721 — we try 1155 first then 721.
+  async watchAsset(opts: { address: Address; tokenId: string; symbol?: string; image?: string }): Promise<boolean> {
+    if (typeof window === 'undefined' || !window.ethereum) {
+      throw new Error('No injected wallet.');
+    }
+    const base = { address: opts.address, tokenId: opts.tokenId, symbol: opts.symbol, image: opts.image };
+    for (const type of ['ERC1155', 'ERC721'] as const) {
+      try {
+        const ok = (await window.ethereum.request({
+          method: 'wallet_watchAsset',
+          // The EIP-747 shape passes a single object, not an array.
+          params: { type, options: base } as unknown as unknown[],
+        })) as boolean;
+        return Boolean(ok);
+      } catch (err) {
+        const msg = (err as Error).message ?? '';
+        // If the wallet rejects the asset type, try the next one; otherwise rethrow.
+        if (!/unsupported|invalid|not supported|type/i.test(msg)) throw err;
+      }
+    }
+    throw new Error('Your wallet does not support adding this NFT type.');
+  }
 }
 
 export const wallet = new Wallet();
