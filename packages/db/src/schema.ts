@@ -113,6 +113,11 @@ export const collections = pgTable(
     blockNumber: bigint('block_number', { mode: 'bigint' }),
     salt: varchar('salt', { length: 66 }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    // Soft-delete: set when an admin archives the collection. Catalog listings
+    // hide archived rows; existing buyers still see their purchases via /me.
+    // On-chain `Marketplace.registeredCollection[...]` cannot be unset, so
+    // archived rows may also be paused via `NFTCollection.pause()` if needed.
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
   },
   (t) => ({
     contractUnique: uniqueIndex('collections_contract_unique').on(t.chainId, t.contractAddress),

@@ -33,6 +33,9 @@ r.post('/', async (c) => {
   if (!collection) {
     throw new ApiError(ERROR_CODES.NOT_FOUND, 'collection not found', 404);
   }
+  if (collection.archivedAt) {
+    throw new ApiError(ERROR_CODES.VALIDATION, 'collection is archived', 400);
+  }
 
   const [media] = await deps.db
     .select()

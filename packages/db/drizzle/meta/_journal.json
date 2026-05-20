@@ -8,6 +8,13 @@
       "when": 1779214233210,
       "tag": "0000_powerful_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779265461029,
+      "tag": "0001_stiff_punisher",
+      "breakpoints": true
     }
   ]
 }

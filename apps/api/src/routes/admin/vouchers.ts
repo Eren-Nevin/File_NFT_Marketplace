@@ -57,6 +57,9 @@ r.post('/', async (c) => {
     .where(eq(collections.id, nft.collectionId))
     .limit(1);
   if (!collection) throw new ApiError(ERROR_CODES.NOT_FOUND, 'collection not found', 404);
+  if (collection.archivedAt) {
+    throw new ApiError(ERROR_CODES.VALIDATION, 'collection is archived', 400);
+  }
 
   // tokenId: we use the row's stable position within the collection — first
   // voucher allocates tokenId 1, second allocates 2, etc., persisted on the nft

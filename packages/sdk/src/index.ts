@@ -142,6 +142,10 @@ export function createClient(opts: ClientOptions) {
           txHash: `0x${string}`;
         }) => request<Collection | { ok: true }>('POST', '/admin/collections/confirm', body),
         list: () => request<{ items: Collection[] }>('GET', '/admin/collections'),
+        archive: (id: string) =>
+          request<{ id: string; archivedAt: string }>('POST', `/admin/collections/${id}/archive`),
+        unarchive: (id: string) =>
+          request<{ id: string; archivedAt: null }>('POST', `/admin/collections/${id}/unarchive`),
       },
       nfts: {
         create: (body: CreateNftRequest) => request<Nft>('POST', '/admin/nfts', body),

@@ -98,6 +98,7 @@ export const zCollection = z.object({
   deployer: zAddress,
   txHash: zTxHash,
   createdAt: z.string().datetime(),
+  archivedAt: z.string().datetime().nullable().optional(),
 });
 export type Collection = z.infer<typeof zCollection>;
 

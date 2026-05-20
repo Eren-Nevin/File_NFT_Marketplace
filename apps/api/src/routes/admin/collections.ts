@@ -91,4 +91,46 @@ r.get('/:id', async (c) => {
   return c.json(row);
 });
 
+/// Soft-archive: hides the collection from the dapp catalog and blocks new
+/// vouchers. Existing buyers keep seeing their NFTs in /me. The on-chain
+/// Marketplace.registeredCollection mapping cannot be unset; admins may also
+/// call NFTCollection.pause() on the clone if they want to block transfers.
+r.post('/:id/archive', async (c) => {
+  const deps = getDeps();
+  const actor = sessionAddress(c);
+  const id = c.req.param('id');
+  const [row] = await deps.db.select().from(collections).where(eq(collections.id, id)).limit(1);
+  if (!row) throw new ApiError(ERROR_CODES.NOT_FOUND, 'collection not found', 404);
+  if (row.archivedAt) return c.json({ id, archivedAt: row.archivedAt.toISOString() });
+
+  const now = new Date();
+  await deps.db.update(collections).set({ archivedAt: now }).where(eq(collections.id, id));
+  await deps.db.insert(auditLogs).values({
+    actor,
+    action: 'collection.archive',
+    targetTable: 'collections',
+    targetId: id,
+    after: { archivedAt: now.toISOString() },
+  });
+  return c.json({ id, archivedAt: now.toISOString() });
+});
+
+r.post('/:id/unarchive', async (c) => {
+  const deps = getDeps();
+  const actor = sessionAddress(c);
+  const id = c.req.param('id');
+  const [row] = await deps.db.select().from(collections).where(eq(collections.id, id)).limit(1);
+  if (!row) throw new ApiError(ERROR_CODES.NOT_FOUND, 'collection not found', 404);
+
+  await deps.db.update(collections).set({ archivedAt: null }).where(eq(collections.id, id));
+  await deps.db.insert(auditLogs).values({
+    actor,
+    action: 'collection.unarchive',
+    targetTable: 'collections',
+    targetId: id,
+    before: { archivedAt: row.archivedAt?.toISOString() ?? null },
+  });
+  return c.json({ id, archivedAt: null });
+});
+
 export default r;

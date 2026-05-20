@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { collections, lazyVouchers, mediaAssets, nfts, nftViewStats, nftViews } from '@nftm/db/schema';
 import { ApiError, ERROR_CODES } from '@nftm/shared/errors';
 import { getDeps } from '../deps.js';
@@ -13,7 +13,12 @@ catalog.use('*', sessionLoader);
 
 catalog.get('/collections', async (c) => {
   const { db } = getDeps();
-  const rows = await db.select().from(collections).orderBy(desc(collections.createdAt)).limit(100);
+  const rows = await db
+    .select()
+    .from(collections)
+    .where(isNull(collections.archivedAt))
+    .orderBy(desc(collections.createdAt))
+    .limit(100);
   return c.json({ items: rows });
 });
 
@@ -21,7 +26,9 @@ catalog.get('/collections/:id', async (c) => {
   const { db } = getDeps();
   const id = c.req.param('id');
   const row = await db.select().from(collections).where(eq(collections.id, id)).limit(1);
-  if (!row[0]) throw new ApiError(ERROR_CODES.NOT_FOUND, 'collection not found', 404);
+  if (!row[0] || row[0].archivedAt) {
+    throw new ApiError(ERROR_CODES.NOT_FOUND, 'collection not found', 404);
+  }
   return c.json(row[0]);
 });
 
@@ -37,7 +44,11 @@ catalog.get('/nfts', async (c) => {
     .from(nfts)
     .innerJoin(collections, eq(collections.id, nfts.collectionId))
     .innerJoin(mediaAssets, eq(mediaAssets.id, nfts.mediaAssetId))
-    .where(collectionId ? eq(nfts.collectionId, collectionId) : undefined)
+    .where(
+      collectionId
+        ? and(eq(nfts.collectionId, collectionId), isNull(collections.archivedAt))
+        : isNull(collections.archivedAt),
+    )
     .orderBy(desc(nfts.createdAt))
     .limit(100);
   return c.json({ items: rows });
@@ -59,13 +70,18 @@ catalog.get('/nfts/:id', async (c) => {
     .limit(1);
   if (!row[0]) throw new ApiError(ERROR_CODES.NOT_FOUND, 'nft not found', 404);
 
-  // Active voucher (if any)
-  const voucherRow = await db
-    .select()
-    .from(lazyVouchers)
-    .where(and(eq(lazyVouchers.nftId, id), eq(lazyVouchers.status, 'active')))
-    .orderBy(desc(lazyVouchers.createdAt))
-    .limit(1);
+  // Archived collections still resolve (so existing buyers' /me links work),
+  // but we suppress active vouchers so the Buy block disappears.
+  const isArchived = row[0].collection.archivedAt !== null;
+
+  const voucherRow = isArchived
+    ? []
+    : await db
+        .select()
+        .from(lazyVouchers)
+        .where(and(eq(lazyVouchers.nftId, id), eq(lazyVouchers.status, 'active')))
+        .orderBy(desc(lazyVouchers.createdAt))
+        .limit(1);
 
   return c.json({ ...row[0], voucher: voucherRow[0] ? serializeVoucher(voucherRow[0]) : null });
 });
