@@ -142,6 +142,7 @@ export function createClient(opts: ClientOptions) {
           txHash: `0x${string}`;
         }) => request<Collection | { ok: true }>('POST', '/admin/collections/confirm', body),
         list: () => request<{ items: Collection[] }>('GET', '/admin/collections'),
+        get: (id: string) => request<Collection>('GET', `/admin/collections/${id}`),
         archive: (id: string) =>
           request<{ id: string; archivedAt: string }>('POST', `/admin/collections/${id}/archive`),
         unarchive: (id: string) =>
